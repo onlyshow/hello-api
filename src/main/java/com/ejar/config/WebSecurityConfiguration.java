@@ -2,9 +2,11 @@ package com.ejar.config;
 
 import com.ejar.security.jwt.JWTConfigurer;
 import com.ejar.security.jwt.TokenProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -24,25 +26,17 @@ import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport;
 @Import(SecurityProblemSupport.class)
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
-    private final UserDetailsService userDetailsService;
+    @Autowired
+    private UserDetailsService userDetailsService;
 
-    private final TokenProvider tokenProvider;
+    @Autowired
+    private TokenProvider tokenProvider;
 
-    private final CorsFilter corsFilter;
+    @Autowired
+    private CorsFilter corsFilter;
 
-    private final SecurityProblemSupport problemSupport;
-
-    public WebSecurityConfiguration(
-        UserDetailsService userDetailsService,
-        TokenProvider tokenProvider,
-        CorsFilter corsFilter,
-        SecurityProblemSupport problemSupport) {
-
-        this.userDetailsService = userDetailsService;
-        this.tokenProvider = tokenProvider;
-        this.corsFilter = corsFilter;
-        this.problemSupport = problemSupport;
-    }
+    @Autowired
+    private SecurityProblemSupport problemSupport;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -57,6 +51,12 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         provider.setPasswordEncoder(passwordEncoder());
 
         return provider;
+    }
+
+    @Override
+    @Bean
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
     }
 
     @Override
@@ -76,7 +76,9 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .and()
             .authorizeRequests()
-            .antMatchers("/hello").permitAll()
+            .antMatchers("/api/hello").permitAll()
+            .antMatchers("/api/authenticate").permitAll()
+            .antMatchers("/api/**").authenticated()
         .and()
             .apply(securityConfigurerAdapter());
 
